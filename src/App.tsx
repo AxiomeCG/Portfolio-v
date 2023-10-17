@@ -1,34 +1,17 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import "./App.scss";
-import { OrbitControls, Sphere } from "@react-three/drei";
-import vertexShader from "./shaders/example/vertex.glsl"
-import fragmentShader from "./shaders/example/fragment.glsl"
-import { useMemo, useRef } from "react";
-import { ShaderMaterial } from "three";
+import { OrbitControls, useTexture, Text, Sphere, Environment } from "@react-three/drei";
 
+import React, { useEffect, useMemo, useRef } from "react";
+import fragmentShader from "./shaders/particles/fragmentShader";
+import vertexShader from "./shaders/particles/vertexShader";
+import * as THREE from "three-stdlib";
+import { Vector2 } from "three";
+import { useControls } from "leva";
+import { Pyramid } from "./Pyramid";
 const Scene = () => {
-  const sphereRef = useRef<any>(null!);
-  const uniforms = useMemo(() => ({
-    uTime: {
-      value: 0.0
-    },
-    // Add any other attributes here
-  }), [])
-
-  useFrame((state) => {
-    const {clock} = state;
-
-    sphereRef.current.material.uniforms.uTime.value = clock.elapsedTime;
-  });
-
   return <>
-    <Sphere ref={sphereRef}>
-      <shaderMaterial
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        uniforms={uniforms}
-      />
-    </Sphere>
+    <Pyramid/>
   </>
 }
 
@@ -36,13 +19,14 @@ const Scene = () => {
 function App() {
   return (
     <>
-      <Canvas>
+      <Canvas camera={{position: [0, 0, 2]}}>
+        <color attach="background" args={["#13131c"]}/>
         <Scene/>
         <pointLight position={[0, 5, 0]} intensity={1} color="white"/>
         <OrbitControls/>
+
       </Canvas>
-    </>
-  );
+    </>);
 }
 
 export default App;
