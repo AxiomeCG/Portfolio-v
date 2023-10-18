@@ -1,7 +1,20 @@
 import {proxy} from 'valtio';
 
 export const state = proxy({
-    mode: 'showcase'
+    mode: 'showcase',
+
+    projectList: [
+        {
+            name: 'Animate Anything',
+            client: 'Anything World',
+            thumbnail: '/project1.png'
+        }, {
+            name: 'Avatopia',
+            client: 'Anything World',
+            thumbnail: '/project2.png'
+        }
+    ],
+    currentProjectIndex: 0
 })
 
 
