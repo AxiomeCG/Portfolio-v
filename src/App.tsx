@@ -12,6 +12,7 @@ import { Pyramid } from "./Pyramid";
 import { LogoShard } from "./LogoShard";
 import {state} from "./state";
 import {useSnapshot} from "valtio";
+import { Tunnel } from "./Tunnel";
 const Scene = () => {
 
   const snapshot = useSnapshot(state)
@@ -60,6 +61,7 @@ const Scene = () => {
 
 
 function App() {
+
   const snapshot = useSnapshot(state)
   const onPrevious = () => {
     if (snapshot.currentProjectIndex === 0) {
@@ -74,15 +76,11 @@ function App() {
   }
   return (
     <>
-      <Canvas camera={{position: [0, 0, 5], fov: 35}}>
+      <Canvas>{/*camera={{position: [0, 0, 5], fov: 35}}*/}
         <color attach="background" args={["#13131c"]}/>
-        <Scene/>
         <pointLight position={[0, 5, 0]} intensity={1} color="white"/>
-        <OrbitControls enabled={false}/>
-        <Html>
-          <button onClick={() => onPrevious()}>{"<-"}</button>
-          <button onClick={() => onNext()}>{"->"}</button>
-        </Html>
+        <Tunnel/>
+        <OrbitControls/>
       </Canvas>
     </>);
 }
