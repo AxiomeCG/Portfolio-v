@@ -116,7 +116,7 @@ const Experience = () => {
 <group position={[0,0,-20]} scale={5}>
 
     <PresentationControls zoom={3}>
-      <Pyramid >
+      <Pyramid progress={progress} >
         <MeshTransmissionMaterial ref={meshTransmissionMaterialRef} envMapIntensity={3} {...config} />
       </Pyramid>
     </PresentationControls>
