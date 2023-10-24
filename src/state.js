@@ -1,4 +1,5 @@
 import {proxy} from 'valtio';
+import {WebGLRenderTarget} from 'three';
 
 export const state = proxy({
     mode: 'showcase',
@@ -14,7 +15,8 @@ export const state = proxy({
             thumbnail: '/project2.png'
         }
     ],
-    currentProjectIndex: 0
+    currentProjectIndex: 0,
+    fbo: null,
 })
 
 
@@ -56,4 +58,25 @@ export const showcaseConfig =  {
     attenuationDistance: 0.5,
     attenuationColor: '#ffffff',
     color: '#3b3b3b',
+}
+
+
+export const testConfig =  {
+    transmissionSampler: false,
+    backside: true,
+    samples: 16,
+    resolution: 2048,
+    transmission: 1,
+    roughness: 0.0,
+    thickness: 3.5,
+    ior: 1.2,
+    chromaticAberration: 0.01,
+    anisotropy: 0.01,
+    distortion: 0.0,
+    distortionScale: 0.3,
+    temporalDistortion:0.5,
+    clearcoat: 0,
+    attenuationDistance: 0.5,
+    attenuationColor: '#ffffff',
+    color: '#ffffff',
 }

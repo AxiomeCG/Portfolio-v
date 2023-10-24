@@ -5,7 +5,7 @@ import vertexShader from './shaders/tunnel/vertex.glsl';
 import fragmentShader from './shaders/tunnel/fragment.glsl';
 import {Vector2} from 'three';
 
-export const Tunnel= () => {
+export const Tunnel = () => {
 
 
   const uniforms = useMemo(() => ({
@@ -23,16 +23,6 @@ export const Tunnel= () => {
   })
   return (
     <>
-      <OrthographicCamera
-        makeDefault={true}
-        args={[-1, 1, 1, -1, 0, 1]}
-        position={[0, 0, 0.01]}
-        zoom={1000}
-      >
-
-
-      </OrthographicCamera>
-
       <Plane ref={planeRef} args={[2, 2, 64,64]} position={[0, 0, 0]} >
         <shaderMaterial uniforms={uniforms} vertexShader={vertexShader} fragmentShader={fragmentShader}/>
       </Plane>
