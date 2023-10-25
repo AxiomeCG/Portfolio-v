@@ -145,20 +145,32 @@ vec3 colorizeFBM(float fbmValue) {
     stops[3] = 1.0;
     vec3 colors[4];
 
-    vec3 red3 = vec3(47.0 / 255.0, 22.0 / 255.0, 22.0 / 255.0);  // #2F1616
-    vec3 red2 = vec3(161.0 / 255.0, 62.0 / 255.0, 34.0 / 255.0); // #A13E22
-    vec3 red1 = vec3(227.0 / 255.0, 224.0 / 255.0, 195.0 / 255.0) -0.4;// #E3E0C3
-    vec3 red0 = vec3(221.0 / 255.0, 150.0 / 255.0, 86.0 / 255.0) -0.5; // #DD9656
+   // vec3 red3 = vec3(47.0 / 255.0, 22.0 / 255.0, 22.0 / 255.0);  // #2F1616
+   // vec3 red2 = vec3(161.0 / 255.0, 62.0 / 255.0, 34.0 / 255.0); // #A13E22
+   // vec3 red1 = vec3(227.0 / 255.0, 224.0 / 255.0, 195.0 / 255.0) -0.4;// #E3E0C3
+   // vec3 red0 = vec3(221.0 / 255.0, 150.0 / 255.0, 86.0 / 255.0) -0.5; // #DD9656
 
     vec3 blue3 = vec3(0.094,0.106,0.125);  // #2F1616
     vec3 blue2 = vec3(0.18,0.243,0.302); // #A13E22
     vec3 blue1 = vec3(0.341,0.459,0.592);// #E3E0C3
     vec3 blue0 = vec3(0.639,0.635,0.737); // #DD9656
 
-    colors[3] = mix(red3, blue3,(sin(uTime * 0.5) + 1.0) *0.5 );
-    colors[2] = mix(red2, blue2,(sin(uTime * 0.5) + 1.0) *0.5 );
-    colors[1] = mix(red1, blue1,(sin(uTime * 0.5) + 1.0) *0.5 );
-    colors[0] = mix(red0, blue0,(sin(uTime * 0.5) + 1.0) *0.5 );
+    //Cloudy whitish colors
+    vec3 red3 = vec3(0.7,0.7,0.7);  // #2F1616
+    vec3 red2 = vec3(0.5,0.5,0.5); // #A13E22
+    vec3 red1 = vec3(0.45,0.45,0.45);// #E3E0C3
+    vec3 red0 = vec3(0.3,0.3,0.3); // #DD9656
+
+    //colors[3] = mix(red3, blue3,(sin(uTime * 0.5) + 1.0) *0.5 );
+    //colors[2] = mix(red2, blue2,(sin(uTime * 0.5) + 1.0) *0.5 );
+    //colors[1] = mix(red1, blue1,(sin(uTime * 0.5) + 1.0) *0.5 );
+    //colors[0] = mix(red0, blue0,(sin(uTime * 0.5) + 1.0) *0.5 );
+
+
+    colors[3] = red3;
+    colors[2] = red2;
+    colors[1] = red1;
+    colors[0] = red0;
     // Interpolate between colors based on the fbmValue
     vec3 finalColor = vec3(0.0);
     for (int i = 0; i < 3; i++) {
@@ -199,7 +211,7 @@ void main() {
 
         // Colorize the FBm noise using the color ramp
         vec3 fbmColor = colorizeFBM(n);
-        col = fbmColor * lightIntensity + vec3(0.2,0.0,0.0);
+        col = fbmColor * lightIntensity ;
     } else {
         col = vec3(0.0); // Background color
     }

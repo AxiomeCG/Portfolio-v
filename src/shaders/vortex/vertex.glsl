@@ -95,7 +95,7 @@ void main() {
     float theta = (position.x - uTime *0.2) * 2.0 * PI;  // Convert position.x to angle
 
     // This function peaks at every pi/8
-    float beamInfluence = pow(cos(theta * 32.0 + fbm(position.xy)), 4.0);  // Raise to power for sharpness
+    float beamInfluence = pow(cos(theta * 32.0 + fbm(position.xy + uTime * 0.1) * 50.0), 4.0);  // Raise to power for sharpness
 
     vec2 displacement = tangent * (abs(fbm(position.xy)) + beamInfluence + fract(position.y + uTime)) * 0.3  + normal * abs(fbm(position.xy)) *0.03 ;
     vec2 perturbation = vec2(
