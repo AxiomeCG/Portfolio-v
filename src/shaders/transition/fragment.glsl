@@ -1,9 +1,10 @@
 uniform sampler2D uTexture;
 uniform float uTime;
-uniform float uProgress;
+//uniform float uProgress;
 uniform vec2 uResolution;
 
 varying vec2 vUv;
+varying vec3 vPosition;
 //	<https://www.shadertoy.com/view/Xd23Dh>
 //	by inigo quilez <http://iquilezles.org/www/articles/voronoise/voronoise.htm>
 //
@@ -114,7 +115,20 @@ void main() {
     offsetSt.x -= 0.10;
 
 
-    float strength = 1.0  - pow(distance(st, vec2(0.5)) * (3.5 - uProgress * 1.25), 1.0);
+
+    float uProgress = sin(uTime) * 0.5 + 0.5;
+    float radius = (1.0 - uProgress) * 4.0;
+
+    if (radius > 2000.) {
+        discard;
+    }
+
+
+    float distanceFromCenter =  distance(st, vec2(0.5));
+
+    float screenRadius = 0.4 * uProgress;
+
+    float maskValue = 1.0 - smoothstep(screenRadius - 0.0, screenRadius + 0.05 * uProgress, distanceFromCenter);
     float timing =  clamp(sin(uTime * 0.25) * 0.5 + 0.5, 0.0, 1.0);
 
 
@@ -126,6 +140,6 @@ void main() {
 
     float v =  clamp(fbm( rotatedSt * 2.0  ) * 0.5 + 0.5, 0.25, 1.0);
 
-    gl_FragColor = vec4(texture2D(uTexture, offsetSt).rgb, clamp( step(0.075,  v * strength * pow(uProgress,4.0)), 0.0, 1.0));
+    gl_FragColor = vec4(texture2D(uTexture, offsetSt).rgb, maskValue);
    // gl_FragColor = vec4(vec3(v ), 1.0);
 }

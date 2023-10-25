@@ -24,12 +24,14 @@ export function Pyramid(props) {
       }).to(meshRef.current.scale, {
         x: 6,
         y: 6,
+        z: 6,
         duration: 3,
       }, '<1')
     } else {
       gsap.timeline().to(meshRef.current.scale, {
         x: 1,
         y: 1,
+        z: 1,
         duration: 3,
       }, ).to(meshRef.current.rotation, {
         y: 0,
