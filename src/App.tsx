@@ -2,12 +2,15 @@ import { Canvas, createPortal, useFrame, useThree } from "@react-three/fiber";
 import "./App.scss";
 import {
   Environment,
-  MeshTransmissionMaterial, OrbitControls,
+  MeshTransmissionMaterial,
   OrthographicCamera,
-  Plane, Points,
+  Plane,
+  Points,
   PresentationControls,
+  ScrollControls,
   Text,
   useFBO,
+  useScroll,
   useTexture
 } from "@react-three/drei";
 
@@ -17,22 +20,84 @@ import showcaseVertexShader from "./shaders/transition/vertex.glsl";
 
 import vortexFragmentShader from "./shaders/vortex/fragment.glsl";
 import vortexVertexShader from "./shaders/vortex/vertex.glsl";
-import { AdditiveBlending, BufferAttribute, BufferGeometry, PMREMGenerator, Scene, Vector2 } from "three";
+import { AdditiveBlending, Group, PMREMGenerator, Scene, Vector2 } from "three";
 import { useControls } from "leva";
 import { Pyramid } from "./Pyramid";
 import { landingPageConfig, state } from "./state";
 import { useSnapshot } from "valtio";
 import { Tunnel } from "./Tunnel";
+import gsap from 'gsap';
+const ContentPortal = () => {
+  const snapshot = useSnapshot(state);
 
+  const scroll = useScroll();
+
+  const textureList = useTexture(snapshot.projectList.map(project => project.thumbnail))
+
+  const contentList = [
+    {
+      title: "Create immersive projects"
+    },
+    {
+      title: "Animate anything",
+      thumbnail: textureList[0]
+    },
+    {
+      title: "Avatopia",
+      thumbnail: textureList[1]
+    }
+  ]
+
+  const planeRef = useRef<Group>(null!);
+  useFrame((state) => {
+    planeRef.current.position.set(0, 0, scroll.offset * 4 * contentList.length);
+    planeRef.current.children.forEach((child, index) => {
+      child.scale.set(0.1 + scroll.offset, 0.1 + scroll.offset, 0.1 + scroll.offset)
+
+      child.children.forEach(subchild => {
+
+         if ( scroll.offset >= (((index + 1)  - ( 0.5* index))/ contentList.length)) {
+           gsap.to(subchild.material, {opacity: 0, duration: 0.3} //TODO FIND A BETTER RULE
+         }
+      })
+      child.rotation.x = -state.mouse.y * 0.25;
+      child.rotation.y = state.mouse.x * 0.25;
+
+    })
+  });
+  return <>
+
+    <group ref={planeRef}>
+
+      {
+        contentList.map((content, index) => {
+          return <group key={`content-${index}`} position={[0, 0, (-4) * index]}>
+
+            {content.thumbnail && <Plane position={[0, 0, 1]} args={[2, 1]}>
+              <meshBasicMaterial transparent map={content.thumbnail}/>
+            </Plane>}
+
+            <Text font={"/ClashDisplay-Regular.woff"} fontSize={0.2} position={[0, 0, 1.5]} outlineColor={"black"}
+                  outlineBlur={0.01}>
+              {content.title}
+            </Text>
+          </group>
+      })
+      }
+
+    </group>
+
+  </>
+}
 const MainWorld = () => {
 
   const snapshot = useSnapshot(state)
 
-  const textureList = useTexture(snapshot.projectList.map(project => project.thumbnail))
 
   const gl = useThree(state => state.gl)
 
   const pmremGenerator = new PMREMGenerator(gl)
+  const textureList = useTexture(snapshot.projectList.map(project => project.thumbnail))
 
   const envList = useMemo(() => textureList.map(texture => pmremGenerator.fromEquirectangular(texture).texture), [])
 
@@ -80,15 +145,15 @@ const Experience = () => {
   const positionsBuffer = useMemo(() => {
     const positions: number[] = [];
 
-    for (let i = 0; i < 1000000 * 3; i+=3) {
+    for (let i = 0; i < 2000000 * 3; i += 3) {
       positions[i + 0] = (Math.random() * 2 - 1);
       positions[i + 1] = (Math.random() * 2 - 1);
-      positions[i + 2] = (Math.random() * 2 - 1) *0.05 ;
+      positions[i + 2] = (Math.random() * 2 - 1) * 0.15;
     }
 
     return new Float32Array(positions);
 
-  }, [] );
+  }, []);
 
   const config = landingPageConfig;
 
@@ -110,6 +175,7 @@ const Experience = () => {
   }), []);
 
   const pointsRef = useRef(null!);
+  const textureList = useTexture(snapshot.projectList.map(project => project.thumbnail))
 
   useFrame((state) => {
     const {gl, clock} = state;
@@ -154,14 +220,27 @@ const Experience = () => {
 
 
     </group>
-    <Points ref={pointsRef} positions={positionsBuffer} >
-      <shaderMaterial blending={AdditiveBlending} depthTest={false} transparent={true} uniforms={vortexUniforms} vertexShader={vortexVertexShader} fragmentShader={vortexFragmentShader} />
-    </Points>
-    <Plane position={[0, 0, 0]} args={[viewport.width, viewport.height]}>
-      <shaderMaterial ref={showcaseMaterialRef} transparent={true} uniforms={showcaseUniforms}
-                      vertexShader={showcaseVertexShader}
-                      fragmentShader={showcaseFragmentShader}/>
-    </Plane>
+
+    <group position={[0, 0, 0]}>
+
+      <Points ref={pointsRef} positions={positionsBuffer}>
+        <shaderMaterial blending={AdditiveBlending} depthTest={false} transparent={true} uniforms={vortexUniforms}
+                        vertexShader={vortexVertexShader} fragmentShader={vortexFragmentShader}/>
+      </Points>
+      <Plane position={[0, 0, 0]} args={[viewport.width, viewport.height]}>
+        <shaderMaterial ref={showcaseMaterialRef} transparent={true} uniforms={showcaseUniforms}
+                        vertexShader={showcaseVertexShader}
+                        fragmentShader={showcaseFragmentShader}/>
+      </Plane>
+
+      <ScrollControls pages={4} damping={1}>
+          <ContentPortal/>
+
+      </ScrollControls>
+
+
+    </group>
+
   </>)
 }
 
@@ -185,7 +264,6 @@ function App() {
         <color attach="background" args={["#13131c"]}/>
         <pointLight position={[0, 5, 0]} intensity={1} color="white"/>
         <Experience/>
-        <OrbitControls/>
       </Canvas>
     </>);
 }

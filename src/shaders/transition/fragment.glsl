@@ -111,12 +111,13 @@ void main() {
     vec2 offsetSt = st;
     offsetSt *= 1.25;
 
-    offsetSt.y -= 0.25;
+    offsetSt.y -= 0.10;
     offsetSt.x -= 0.10;
 
 
 
-    float uProgress = sin(uTime) * 0.5 + 0.5;
+    //float uProgress = sin(uTime) * 0.5 + 0.5;
+    float uProgress =  1.0;
     float radius = (1.0 - uProgress) * 4.0;
 
     if (radius > 2000.) {

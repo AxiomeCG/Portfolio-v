@@ -18,7 +18,7 @@ export const Tunnel = () => {
   useFrame((state, delta) => {
     if (planeRef.current) {
       planeRef.current.material.uniforms.uTime.value = state.clock.elapsedTime
-      planeRef.current.material.uniforms.uResolution.value = new Vector2(window.innerWidth  * window.devicePixelRatio, window.innerHeight * window.devicePixelRatio)
+      planeRef.current.material.uniforms.uResolution.value = new Vector2(2048, 2048 )
     }
   })
   return (
