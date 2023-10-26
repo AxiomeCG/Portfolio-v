@@ -57,7 +57,7 @@ const ContentPortal = () => {
       child.children.forEach(subchild => {
 
          if ( scroll.offset >= (((index + 1)  - ( 0.5* index))/ contentList.length)) {
-           gsap.to(subchild.material, {opacity: 0, duration: 0.3} //TODO FIND A BETTER RULE
+           gsap.to(subchild.material, {opacity: 0, duration: 0.3}) //TODO FIND A BETTER RULE
          }
       })
       child.rotation.x = -state.mouse.y * 0.25;
