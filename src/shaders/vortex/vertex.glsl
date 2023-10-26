@@ -1,5 +1,5 @@
 #define PI 3.1415926535897932384626433832795
-//uniform float uProgress;
+uniform float uProgress;
 uniform float uTime;
 uniform vec2 uResolution;
 
@@ -164,7 +164,7 @@ float snoise3D(vec3 v){
 void main() {
 
     //float uProgress = sin(uTime) * 0.5 + 0.5;
-    float uProgress = 1.0;
+    //float uProgress = 1.0;
 
     float radius = (uResolution.x * 0.4  + (pow(snoise(position.xy * 0.5 - uTime *0.5), 0.5) * 0.1)) * uProgress ;
     vec2 tangent = getTangent(position.xy, radius);

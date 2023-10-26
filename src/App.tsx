@@ -101,13 +101,13 @@ const MainWorld = () => {
 
   const envList = useMemo(() => textureList.map(texture => pmremGenerator.fromEquirectangular(texture).texture), [])
 
-  const {landing} = useControls({
-    landing: true
+  const { works} = useControls({
+    works: false,
   })
 
   useEffect(() => {
-    state.mode = landing ? "landing" : "showcase"
-  }, [landing]);
+    state.mode = works ? "works" : "landing"
+  }, [works]);
 
 
   return <>
@@ -157,7 +157,16 @@ const Experience = () => {
 
   const config = landingPageConfig;
 
-  const {progress} = useControls({progress: {value: 0.0, min: 0, max: 1}})
+  //const {progress} = useControls({progress: {value: 0.0, min: 0, max: 1}})
+  const progressRef = useRef(0)
+
+  useEffect(() => {
+    if (snapshot.mode === "works") {
+      gsap.to(progressRef, {current: 1, duration: 3})
+    } else {
+      gsap.to(progressRef, {current: 0, duration: 3})
+    }
+  }, [snapshot.mode]);
 
   const {viewport} = useThree();
 
@@ -185,13 +194,13 @@ const Experience = () => {
     gl.render(tunnelScene, tunnelCameraRef.current);
 
     showcaseMaterialRef.current.uniforms.uTime.value = clock.getElapsedTime();
-    showcaseMaterialRef.current.uniforms.uProgress.value = progress;
+    showcaseMaterialRef.current.uniforms.uProgress.value = progressRef.current;
     showcaseMaterialRef.current.uniforms.uTexture.value = tunnelRenderTarget.texture;
     showcaseMaterialRef.current.uniforms.uResolution.value = new Vector2(viewport.width, viewport.height);
 
 
     pointsRef.current.material.uniforms.uTime.value = clock.getElapsedTime();
-    pointsRef.current.material.uniforms.uProgress.value = progress;
+    pointsRef.current.material.uniforms.uProgress.value = progressRef.current;
     pointsRef.current.material.uniforms.uResolution.value = new Vector2(viewport.width, viewport.height);
 
     gl.setRenderTarget(null);
@@ -212,7 +221,7 @@ const Experience = () => {
     <group position={[0, 0, -20]} scale={5}>
 
       <PresentationControls zoom={3}>
-        <Pyramid progress={progress}>
+        <Pyramid progress={progressRef.current}>
           <MeshTransmissionMaterial ref={meshTransmissionMaterialRef} envMapIntensity={3} {...config} />
         </Pyramid>
       </PresentationControls>
@@ -234,7 +243,7 @@ const Experience = () => {
       </Plane>
 
       <ScrollControls pages={4} damping={1}>
-          <ContentPortal/>
+        {snapshot.mode === "works" &&<ContentPortal/>}
 
       </ScrollControls>
 

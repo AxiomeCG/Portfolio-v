@@ -1,6 +1,6 @@
 uniform sampler2D uTexture;
 uniform float uTime;
-//uniform float uProgress;
+uniform float uProgress;
 uniform vec2 uResolution;
 
 varying vec2 vUv;
@@ -117,7 +117,7 @@ void main() {
 
 
     //float uProgress = sin(uTime) * 0.5 + 0.5;
-    float uProgress =  1.0;
+    //float uProgress =  1.0;
     float radius = (1.0 - uProgress) * 4.0;
 
     if (radius > 2000.) {
