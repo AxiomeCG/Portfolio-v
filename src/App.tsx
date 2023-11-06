@@ -20,19 +20,74 @@ import showcaseVertexShader from "./shaders/transition/vertex.glsl";
 
 import vortexFragmentShader from "./shaders/vortex/fragment.glsl";
 import vortexVertexShader from "./shaders/vortex/vertex.glsl";
-import { AdditiveBlending, Group, PMREMGenerator, Scene, Vector2 } from "three";
+import { AdditiveBlending, Group, PMREMGenerator, Scene, Texture, Vector2 } from "three";
 import { useControls } from "leva";
 import { Pyramid } from "./Pyramid";
 import { landingPageConfig, state } from "./state";
 import { useSnapshot } from "valtio";
 import { Tunnel } from "./Tunnel";
-import gsap from 'gsap';
-const ContentPortal = () => {
+import gsap from "gsap";
+
+
+const HeadlineTitle = ({timeline, content}: { timeline: gsap.core.Timeline, content: { title: string } }) => {
+  const textRef = useRef(null!);
+
+  useEffect(() => {
+    timeline.fromTo(textRef.current, {fillOpacity: 0, outlineOpacity: 0}, {fillOpacity: 1, outlineOpacity: 1})
+      .fromTo(textRef.current,{fillOpacity: 1, outlineOpacity: 1}, {fillOpacity: 0, outlineOpacity: 0})
+
+  }, []);
+
+
+  return <>
+    <Text ref={textRef} font={"/ClashDisplay-Regular.woff"} fontSize={0.2} position={[0, 0, 1.5]} outlineColor={"black"}
+          outlineBlur={0.01}>
+      {content.title}
+    </Text>
+  </>
+}
+
+const ProjectCard = ({timeline, content}: {
+  timeline: gsap.core.Timeline,
+  content: { thumbnail: Texture, title: string }
+}) => {
+  const planeRef = useRef(null!);
+  const textRef = useRef(null!);
+  const scopeRef = useRef(null!);
+  useEffect(() => {
+
+    planeRef.current.material.opacity= 0;
+
+    const context = gsap.context(
+      () => {
+
+        timeline
+          .fromTo(planeRef.current.material, {opacity: 0}, {opacity: 1})
+          .fromTo(textRef.current, {fillOpacity: 0, outlineOpacity: 0}, {fillOpacity: 1, outlineOpacity: 1}, "<")
+          .fromTo(planeRef.current.material, {opacity: 1}, {opacity: 0})
+          .fromTo(textRef.current, {fillOpacity: 1, outlineOpacity: 1}, {fillOpacity: 0, outlineOpacity: 0}, "<")
+      }, [scopeRef]
+    )
+
+    return () => context.revert();
+
+  }, []);
+  return <group ref={scopeRef}>
+   <Plane ref={planeRef} position={[0, 0, 1]} args={[2, 1]}>
+      <meshBasicMaterial transparent={true} opacity={0} map={content.thumbnail}/>
+    </Plane>
+
+    <Text ref={textRef} font={"/ClashDisplay-Regular.woff"} fontSize={0.2} position={[0, 0, 1.5]} outlineColor={"black"}
+          outlineBlur={0.01} outlineOpacity={0} fillOpacity={0}>
+      {content.title}
+    </Text>
+  </group>
+}
+const ContentPortal = ({timeline}: { timeline: gsap.core.Timeline }) => {
   const snapshot = useSnapshot(state);
+  const textureList = useTexture(snapshot.projectList.map(project => project.thumbnail))
 
   const scroll = useScroll();
-
-  const textureList = useTexture(snapshot.projectList.map(project => project.thumbnail))
 
   const contentList = [
     {
@@ -48,46 +103,29 @@ const ContentPortal = () => {
     }
   ]
 
+
   const planeRef = useRef<Group>(null!);
   useFrame((state) => {
     planeRef.current.position.set(0, 0, scroll.offset * 4 * contentList.length);
     planeRef.current.children.forEach((child, index) => {
       child.scale.set(0.1 + scroll.offset, 0.1 + scroll.offset, 0.1 + scroll.offset)
-
-      child.children.forEach(subchild => {
-
-         if ( scroll.offset >= (((index + 1)  - ( 0.5* index))/ contentList.length)) {
-           gsap.to(subchild.material, {opacity: 0, duration: 0.3}) //TODO FIND A BETTER RULE
-         }
-      })
       child.rotation.x = -state.mouse.y * 0.25;
       child.rotation.y = state.mouse.x * 0.25;
-
     })
+
+
   });
-  return <>
+  return <group ref={planeRef}>
+    {
+      contentList.map((content, index) => {
+        return <group key={`content-${index}`} position={[0, 0, (-4) * index]}>
 
-    <group ref={planeRef}>
-
-      {
-        contentList.map((content, index) => {
-          return <group key={`content-${index}`} position={[0, 0, (-4) * index]}>
-
-            {content.thumbnail && <Plane position={[0, 0, 1]} args={[2, 1]}>
-              <meshBasicMaterial transparent map={content.thumbnail}/>
-            </Plane>}
-
-            <Text font={"/ClashDisplay-Regular.woff"} fontSize={0.2} position={[0, 0, 1.5]} outlineColor={"black"}
-                  outlineBlur={0.01}>
-              {content.title}
-            </Text>
-          </group>
+          {content.thumbnail && <ProjectCard timeline={timeline} content={content}/>}
+          {!content.thumbnail && <HeadlineTitle timeline={timeline} content={content}/>}
+        </group>
       })
-      }
-
-    </group>
-
-  </>
+    }
+  </group>
 }
 const MainWorld = () => {
 
@@ -101,7 +139,7 @@ const MainWorld = () => {
 
   const envList = useMemo(() => textureList.map(texture => pmremGenerator.fromEquirectangular(texture).texture), [])
 
-  const { works} = useControls({
+  const {works} = useControls({
     works: false,
   })
 
@@ -132,7 +170,9 @@ const MainWorld = () => {
 
   </>
 }
-const Experience = () => {
+
+
+const ScrollableExperience = () => {
   const tunnelScene = new Scene();
   const tunnelCameraRef = useRef(null!);
 
@@ -170,6 +210,7 @@ const Experience = () => {
 
   const {viewport} = useThree();
 
+
   const showcaseUniforms = useMemo(() => ({
     uTime: {value: 0},
     uTexture: {value: tunnelRenderTarget.texture},
@@ -185,8 +226,27 @@ const Experience = () => {
 
   const pointsRef = useRef(null!);
   const textureList = useTexture(snapshot.projectList.map(project => project.thumbnail))
+  const scroll = useScroll();
+  const timelineRef = useRef(gsap.timeline({paused: true}));
+  const subtimelineRef = useRef(gsap.timeline());
+
+  useEffect(() => {
+    timelineRef.current.to(showcaseMaterialRef.current.uniforms.uProgress, {
+      value: 1,
+      duration: 1,
+    })
+      .to(pointsRef.current.material.uniforms.uProgress, {
+        value: 1,
+        duration: 1,
+      }, "<")
+
+    subtimelineRef.current.progress(0);
+    timelineRef.current.add(subtimelineRef.current);
+  }, []);
 
   useFrame((state) => {
+    timelineRef.current.progress(scroll.offset);
+
     const {gl, clock} = state;
 
     gl.setRenderTarget(tunnelRenderTarget);
@@ -194,19 +254,21 @@ const Experience = () => {
     gl.render(tunnelScene, tunnelCameraRef.current);
 
     showcaseMaterialRef.current.uniforms.uTime.value = clock.getElapsedTime();
-    showcaseMaterialRef.current.uniforms.uProgress.value = progressRef.current;
+    //showcaseMaterialRef.current.uniforms.uProgress.value = progressRef.current;
     showcaseMaterialRef.current.uniforms.uTexture.value = tunnelRenderTarget.texture;
     showcaseMaterialRef.current.uniforms.uResolution.value = new Vector2(viewport.width, viewport.height);
 
 
     pointsRef.current.material.uniforms.uTime.value = clock.getElapsedTime();
-    pointsRef.current.material.uniforms.uProgress.value = progressRef.current;
+    //pointsRef.current.material.uniforms.uProgress.value = progressRef.current;
     pointsRef.current.material.uniforms.uResolution.value = new Vector2(viewport.width, viewport.height);
 
     gl.setRenderTarget(null);
-  });
 
-  return (<>
+
+  });
+  return <>
+
     {createPortal(<>
       <OrthographicCamera
         ref={tunnelCameraRef}
@@ -230,26 +292,24 @@ const Experience = () => {
 
     </group>
 
-    <group position={[0, 0, 0]}>
+    <Points ref={pointsRef} positions={positionsBuffer}>
+      <shaderMaterial blending={AdditiveBlending} depthTest={false} transparent={true} uniforms={vortexUniforms}
+                      vertexShader={vortexVertexShader} fragmentShader={vortexFragmentShader}/>
+    </Points>
+    <Plane position={[0, 0, 0]} args={[viewport.width, viewport.height]}>
+      <shaderMaterial ref={showcaseMaterialRef} transparent={true} uniforms={showcaseUniforms}
+                      vertexShader={showcaseVertexShader}
+                      fragmentShader={showcaseFragmentShader}/>
+    </Plane>
+    <ContentPortal timeline={subtimelineRef.current}/>
+  </>
+}
+const Experience = () => {
 
-      <Points ref={pointsRef} positions={positionsBuffer}>
-        <shaderMaterial blending={AdditiveBlending} depthTest={false} transparent={true} uniforms={vortexUniforms}
-                        vertexShader={vortexVertexShader} fragmentShader={vortexFragmentShader}/>
-      </Points>
-      <Plane position={[0, 0, 0]} args={[viewport.width, viewport.height]}>
-        <shaderMaterial ref={showcaseMaterialRef} transparent={true} uniforms={showcaseUniforms}
-                        vertexShader={showcaseVertexShader}
-                        fragmentShader={showcaseFragmentShader}/>
-      </Plane>
-
-      <ScrollControls pages={4} damping={1}>
-        {snapshot.mode === "works" &&<ContentPortal/>}
-
-      </ScrollControls>
-
-
-    </group>
-
+  return (<>
+    <ScrollControls pages={5} damping={1}>
+      <ScrollableExperience/>
+    </ScrollControls>
   </>)
 }
 
