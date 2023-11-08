@@ -1,4 +1,6 @@
-import {proxy} from 'valtio';
+import {proxy, ref} from 'valtio';
+import {createRef} from 'react';
+import {Color} from 'three';
 
 export const state = proxy({
     mode: 'showcase',
@@ -14,7 +16,8 @@ export const state = proxy({
             thumbnail: '/project2.png'
         }
     ],
-    currentProjectIndex: 0
+    currentProjectIndex: 0,
+    currentColor: ref(new Color('#ffffff')),
 })
 
 

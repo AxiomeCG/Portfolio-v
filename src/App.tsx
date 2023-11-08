@@ -20,7 +20,7 @@ import showcaseVertexShader from "./shaders/transition/vertex.glsl";
 
 import vortexFragmentShader from "./shaders/vortex/fragment.glsl";
 import vortexVertexShader from "./shaders/vortex/vertex.glsl";
-import { AdditiveBlending, Group, PMREMGenerator, Scene, Texture, Vector2 } from "three";
+import { AdditiveBlending, Color, Group, PMREMGenerator, Scene, Texture, Vector2 } from "three";
 import { useControls } from "leva";
 import { Pyramid } from "./Pyramid";
 import { landingPageConfig, state } from "./state";
@@ -33,15 +33,22 @@ const HeadlineTitle = ({timeline, content}: { timeline: gsap.core.Timeline, cont
   const textRef = useRef(null!);
 
   useEffect(() => {
-    timeline.fromTo(textRef.current, {fillOpacity: 0, outlineOpacity: 0}, {fillOpacity: 1, outlineOpacity: 1})
-      .fromTo(textRef.current,{fillOpacity: 1, outlineOpacity: 1}, {fillOpacity: 0, outlineOpacity: 0})
+    const tl = gsap.timeline();
+    timeline.add(
+      tl.fromTo(textRef.current, {fillOpacity: 0, outlineOpacity: 0}, {
+        fillOpacity: 1, outlineOpacity: 1, onUpdate: () => {
+          state.currentColor.lerp(new Color("#ffffff"), tl.progress());
+        }
+      })
+        .to(textRef.current, {fillOpacity: 0, outlineOpacity: 0, delay: 0.5})
+    )
 
   }, []);
 
 
   return <>
     <Text ref={textRef} font={"/ClashDisplay-Regular.woff"} fontSize={0.2} position={[0, 0, 1.5]} outlineColor={"black"}
-          outlineBlur={0.01}>
+          outlineBlur={0.00} outlineWidth={0.002} fillOpacity={0}>
       {content.title}
     </Text>
   </>
@@ -49,23 +56,30 @@ const HeadlineTitle = ({timeline, content}: { timeline: gsap.core.Timeline, cont
 
 const ProjectCard = ({timeline, content}: {
   timeline: gsap.core.Timeline,
-  content: { thumbnail: Texture, title: string }
+  content: { thumbnail: Texture, title: string, dominantColor: string }
 }) => {
-  const planeRef = useRef(null!);
+  const materialRef = useRef(null!);
   const textRef = useRef(null!);
   const scopeRef = useRef(null!);
   useEffect(() => {
 
-    planeRef.current.material.opacity= 0;
 
     const context = gsap.context(
       () => {
 
-        timeline
-          .fromTo(planeRef.current.material, {opacity: 0}, {opacity: 1})
-          .fromTo(textRef.current, {fillOpacity: 0, outlineOpacity: 0}, {fillOpacity: 1, outlineOpacity: 1}, "<")
-          .fromTo(planeRef.current.material, {opacity: 1}, {opacity: 0})
-          .fromTo(textRef.current, {fillOpacity: 1, outlineOpacity: 1}, {fillOpacity: 0, outlineOpacity: 0}, "<")
+        console.log(materialRef.current)
+        const tl = gsap.timeline();
+        timeline.add(tl.fromTo(materialRef.current, {opacity: 0}, {
+          opacity: 1, onUpdate: () => {
+            state.currentColor.lerpHSL(new Color(content.dominantColor), tl.progress());
+          }
+        })
+          .fromTo(textRef.current, {fillOpacity: 0, outlineOpacity: 0}, {fillOpacity: 1, outlineOpacity: 1}, "<"))
+
+        timeline.add(gsap.timeline({delay: 0.5}).to(materialRef.current, {opacity: 0})
+          .to(textRef.current, {fillOpacity: 0, outlineOpacity: 0}, "<"))
+
+
       }, [scopeRef]
     )
 
@@ -73,17 +87,19 @@ const ProjectCard = ({timeline, content}: {
 
   }, []);
   return <group ref={scopeRef}>
-   <Plane ref={planeRef} position={[0, 0, 1]} args={[2, 1]}>
-      <meshBasicMaterial transparent={true} opacity={0} map={content.thumbnail}/>
+    <Plane position={[0, 0, 1]} args={[2, 1]}>
+      <meshBasicMaterial ref={materialRef} opacity={0} transparent={true} map={content.thumbnail}/>
     </Plane>
 
     <Text ref={textRef} font={"/ClashDisplay-Regular.woff"} fontSize={0.2} position={[0, 0, 1.5]} outlineColor={"black"}
-          outlineBlur={0.01} outlineOpacity={0} fillOpacity={0}>
+          outlineBlur={0.00} outlineWidth={0.002} outlineOpacity={0} fillOpacity={0}>
       {content.title}
     </Text>
   </group>
 }
-const ContentPortal = ({timeline}: { timeline: gsap.core.Timeline }) => {
+const ContentPortal = ({timeline}: {
+  timeline: gsap.core.Timeline,
+}) => {
   const snapshot = useSnapshot(state);
   const textureList = useTexture(snapshot.projectList.map(project => project.thumbnail))
 
@@ -95,19 +111,22 @@ const ContentPortal = ({timeline}: { timeline: gsap.core.Timeline }) => {
     },
     {
       title: "Animate anything",
-      thumbnail: textureList[0]
+      thumbnail: textureList[0],
+      dominantColor: "#C000BE"
     },
     {
       title: "Avatopia",
-      thumbnail: textureList[1]
+      thumbnail: textureList[1],
+      dominantColor: "#008E9F"
+
     }
   ]
 
 
-  const planeRef = useRef<Group>(null!);
+  const groupRef = useRef<Group>(null!);
   useFrame((state) => {
-    planeRef.current.position.set(0, 0, scroll.offset * 4 * contentList.length);
-    planeRef.current.children.forEach((child, index) => {
+    groupRef.current.position.set(0, 0,  -6 + scroll.offset * 4 * contentList.length);
+    groupRef.current.children.forEach((child, index) => {
       child.scale.set(0.1 + scroll.offset, 0.1 + scroll.offset, 0.1 + scroll.offset)
       child.rotation.x = -state.mouse.y * 0.25;
       child.rotation.y = state.mouse.x * 0.25;
@@ -115,10 +134,10 @@ const ContentPortal = ({timeline}: { timeline: gsap.core.Timeline }) => {
 
 
   });
-  return <group ref={planeRef}>
+  return <group ref={groupRef}>
     {
       contentList.map((content, index) => {
-        return <group key={`content-${index}`} position={[0, 0, (-4) * index]}>
+        return <group key={`content-${index}`} position={[0, 0, (-2.5) * index]}>
 
           {content.thumbnail && <ProjectCard timeline={timeline} content={content}/>}
           {!content.thumbnail && <HeadlineTitle timeline={timeline} content={content}/>}
@@ -149,24 +168,6 @@ const MainWorld = () => {
 
 
   return <>
-    {(snapshot.mode === "showcase") && <>
-      <Text font={"/ClashDisplay-Regular.woff"} scale={0.2} position={[-0.75, 0, 2]}>
-        {snapshot.projectList[snapshot.currentProjectIndex].name}
-      </Text>
-
-      <Text font={"/ClashDisplay-Regular.woff"} scale={0.08} position={[-0.75, -0.15, 2]}>
-        Discover
-      </Text>
-
-    </>
-    }
-    {(snapshot.mode === "landing") && <>
-      <Text font={"/ClashDisplay-Regular.woff"} position={[0, 0, -1]}>{"Creative \n Technologist"}</Text>
-    </>
-    }
-
-    <Environment map={snapshot.mode === "showcase" ? envList[snapshot.currentProjectIndex] : undefined} blur={0.5}
-                 files={snapshot.mode === "showcase" ? undefined : "/skybox.hdr"}/>
 
   </>
 }
@@ -197,17 +198,7 @@ const ScrollableExperience = () => {
 
   const config = landingPageConfig;
 
-  //const {progress} = useControls({progress: {value: 0.0, min: 0, max: 1}})
-  const progressRef = useRef(0)
-
-  useEffect(() => {
-    if (snapshot.mode === "works") {
-      gsap.to(progressRef, {current: 1, duration: 3})
-    } else {
-      gsap.to(progressRef, {current: 0, duration: 3})
-    }
-  }, [snapshot.mode]);
-
+  const pyramidRotationSpeed = useRef({value: 0});
   const {viewport} = useThree();
 
 
@@ -222,29 +213,39 @@ const ScrollableExperience = () => {
     uTime: {value: 0},
     uProgress: {value: 0},
     uResolution: {value: [viewport.width, viewport.height]},
+    uColor: {value: new Color("#ffffff")},
+    uColorFactor: {value: 0.0}
   }), []);
 
   const pointsRef = useRef(null!);
-  const textureList = useTexture(snapshot.projectList.map(project => project.thumbnail))
   const scroll = useScroll();
   const timelineRef = useRef(gsap.timeline({paused: true}));
   const subtimelineRef = useRef(gsap.timeline());
+  const mainTextRef = useRef(null!);
+  const pyramidRef = useRef(null!);
 
   useEffect(() => {
-    timelineRef.current.to(showcaseMaterialRef.current.uniforms.uProgress, {
-      value: 1,
-      duration: 1,
-    })
+    timelineRef.current
+      .fromTo(mainTextRef.current, {fillOpacity: 1, outlineOpacity: 1}, {fillOpacity: 0, outlineOpacity: 0})
+      .fromTo(pyramidRotationSpeed.current, {value: 1}, {value: 15, duration: 5.0, ease: "expo.out"}, "-=1")
+      .fromTo(pyramidRef.current.scale, {x: 1,y: 1, z:1}, {x: 1.5,y: 1.5, z:1.5, duration: 5.0, ease: "power1.in"}, "<")
+      .to(showcaseMaterialRef.current.uniforms.uProgress, {
+        value: 1,
+        duration: 2,
+      })
       .to(pointsRef.current.material.uniforms.uProgress, {
         value: 1,
-        duration: 1,
+        duration: 2,
       }, "<")
+
 
     subtimelineRef.current.progress(0);
     timelineRef.current.add(subtimelineRef.current);
+
+
   }, []);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     timelineRef.current.progress(scroll.offset);
 
     const {gl, clock} = state;
@@ -263,7 +264,19 @@ const ScrollableExperience = () => {
     //pointsRef.current.material.uniforms.uProgress.value = progressRef.current;
     pointsRef.current.material.uniforms.uResolution.value = new Vector2(viewport.width, viewport.height);
 
+
+    if (snapshot.currentColor.r >= 0.75 && snapshot.currentColor.g >= 0.75 && snapshot.currentColor.b >= 0.75) {
+      gsap.to(pointsRef.current.material.uniforms.uColorFactor, {value: 0.0});
+    } else {
+      gsap.to(pointsRef.current.material.uniforms.uColorFactor, {value: 1.0});
+    }
+    pointsRef.current.material.uniforms.uColor.value = snapshot.currentColor;
+
     gl.setRenderTarget(null);
+
+
+      pyramidRef.current.rotation.y += delta * 0.5 * pyramidRotationSpeed.current.value;
+      pyramidRef.current.rotation.x += delta * 0.1 * pyramidRotationSpeed.current.value;
 
 
   });
@@ -283,7 +296,7 @@ const ScrollableExperience = () => {
     <group position={[0, 0, -20]} scale={5}>
 
       <PresentationControls zoom={3}>
-        <Pyramid progress={progressRef.current}>
+        <Pyramid ref={pyramidRef}>
           <MeshTransmissionMaterial ref={meshTransmissionMaterialRef} envMapIntensity={3} {...config} />
         </Pyramid>
       </PresentationControls>
@@ -291,6 +304,12 @@ const ScrollableExperience = () => {
 
 
     </group>
+
+    <Text ref={mainTextRef} font={"/ClashDisplay-Regular.woff"} position={[0, 0, -25]}
+          scale={5}>{"Creative \n Technologist"}</Text>
+
+    <Environment
+      files={"/skybox.hdr"}/>
 
     <Points ref={pointsRef} positions={positionsBuffer}>
       <shaderMaterial blending={AdditiveBlending} depthTest={false} transparent={true} uniforms={vortexUniforms}
@@ -307,7 +326,7 @@ const ScrollableExperience = () => {
 const Experience = () => {
 
   return (<>
-    <ScrollControls pages={5} damping={1}>
+    <ScrollControls pages={8}>
       <ScrollableExperience/>
     </ScrollControls>
   </>)
